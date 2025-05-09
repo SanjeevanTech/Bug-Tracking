@@ -56,4 +56,58 @@ class CommentController extends Controller
             ], 500);
         }
     }
+
+    public function updateComment(Request $request, $id)
+    {
+        try {
+            $validatedData = $request->validate([
+                'comment' => 'required|string',
+            ]);
+
+            $comment = Comment::find($id);
+
+            if (!$comment) {
+                return response()->json(['message' => 'Comment not found.'], 404);
+            }
+
+            if (Auth::id() !== $comment->user_id) {
+                return response()->json(['message' => 'Unauthorized.'], 403);
+            }
+
+            $comment->comment = $validatedData['comment'];
+            $comment->save();
+
+            return response()->json([
+                'message' => 'Comment updated successfully.',
+                'comment' => $comment
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => 'Validation failed.',
+                'errors'  => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'An error occurred while updating the comment.',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function deleteComment($id)
+    {
+        $comment = Comment::find($id);
+
+        if (!$comment) {
+            return response()->json(['message' => 'Comment not found.'], 404);
+        }
+
+        if (Auth::id() !== $comment->user_id) {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+
+        $comment->delete();
+
+        return response()->json(['message' => 'Comment deleted successfully.']);
+    }
 }

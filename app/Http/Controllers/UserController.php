@@ -118,9 +118,7 @@ class UserController extends Controller
         ]);
     }
 
-
-    public function getDetails()
-    {
+    public function getDetails(){
         $userId = Auth::id();
         if (!$userId) {
             return response()->json([
@@ -136,31 +134,45 @@ class UserController extends Controller
         ], 200);
     }
 
-   public function updateUser(Request $request, $id)
-{
-    $user = User::find($id);
+   public function updateUser(Request $request, $id){
+        $user = User::find($id);
 
-    if (!$user) {
-        return response()->json(['message' => 'User not found.'], 404);
+        if (!$user) {
+            return response()->json(['message' => 'User not found.'], 404);
+        }
+
+        
+        $validatedData = $request->validate([
+            'name'  => 'sometimes|required|string|max:255',
+            'email' => 'sometimes|required|email|unique:users,email,' . $id,
+        ], [
+            'email.unique'    => 'This email is already used by another user. Please use a different one.',
+        ]);
+
+
+        $user->update($validatedData);
+
+        return response()->json([
+            'message' => 'User updated successfully.',
+            'user' => $user
+        ], 200);
+   }
+
+   public function deleteUser($id){
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json(['message' => 'User not found.'], 404);
+        }
+
+        $user->delete();
+
+        return response()->json(['message' => 'User deleted successfully.'], 200);
     }
 
     
-    $validatedData = $request->validate([
-        'name'  => 'sometimes|required|string|max:255',
-        'email' => 'sometimes|required|email|unique:users,email,' . $id, // Skip validation for the current user's email
-    ], [
-        'email.unique'    => 'This email is already used by another user. Please use a different one.',
-    ]);
-
-    // If email is unique or updated, proceed to update user
-    $user->update($validatedData);
-
-    return response()->json([
-        'message' => 'User updated successfully.',
-        'user' => $user
-    ], 200);
-}
 
 
-    
+
+
 }
