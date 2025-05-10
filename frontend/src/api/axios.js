@@ -1,32 +1,45 @@
 import axios from 'axios';
-const API_BASE_URL= "http://localhost:8000/api";
 
 const api = axios.create({
-  baseURL: API_BASE_URL,
-  withCredentials: true,
+  baseURL: 'http://localhost:8000/api', // adjust this to match your backend URL
   headers: {
-    'Accept': 'application/json',
     'Content-Type': 'application/json',
+    'Accept': 'application/json'
   },
 });
 
-// Add request interceptor to include token
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('authToken');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+// Add a request interceptor
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    // Log the request
+    console.log('Request:', config);
+    return config;
+  },
+  (error) => {
+    console.error('Request Error:', error);
+    return Promise.reject(error);
   }
-  return config;
-});
+);
 
-// Add response interceptor to handle errors
+// Add a response interceptor
 api.interceptors.response.use(
-  response => response,
-  error => {
+  (response) => {
+    // Log the response
+    console.log('Response:', response);
+    return response;
+  },
+  (error) => {
+    console.error('Response Error:', error);
+    
     if (error.response?.status === 401) {
       localStorage.removeItem('authToken');
-      window.location.href = '/login';
+      window.location.href = '/';
     }
+    
     return Promise.reject(error);
   }
 );

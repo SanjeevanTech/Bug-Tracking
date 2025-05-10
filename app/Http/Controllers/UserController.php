@@ -8,6 +8,9 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\PasswordResetMail;
 
 class UserController extends Controller
 {
@@ -170,9 +173,77 @@ public function getDetails(Request $request)
         return response()->json(['message' => 'User deleted successfully.'], 200);
     }
 
-    
+    public function getAllUsers()
+    {
+        try {
+            // Get all users except the current user
+            $users = User::where('id', '!=', auth()->id())
+                        ->select('id', 'name', 'email', 'role')
+                        ->get();
+            
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Users retrieved successfully',
+                'users' => $users
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to retrieve users',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 
+    public function forgotPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|exists:users,email'
+        ]);
 
+        $user = User::where('email', $request->email)->first();
+        
+        // Generate a random token
+        $resetToken = Str::random(60);
+        
+        // Save token to database
+        $user->reset_token = $resetToken;
+        $user->reset_token_expires_at = now()->addHours(1);
+        $user->save();
 
+        // Return the token directly in the response
+        return response()->json([
+            'message' => 'Password reset token generated successfully.',
+            'reset_token' => $resetToken // Include token in response
+        ]);
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'token' => 'required|string',
+            'password' => 'required|string|min:6|confirmed',
+        ]);
+
+        $user = User::where('reset_token', $request->token)
+                    ->where('reset_token_expires_at', '>', now())
+                    ->first();
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'Invalid or expired reset token'
+            ], 400);
+        }
+
+        // Update password
+        $user->password = Hash::make($request->password);
+        $user->reset_token = null;
+        $user->reset_token_expires_at = null;
+        $user->save();
+
+        return response()->json([
+            'message' => 'Password has been reset successfully'
+        ]);
+    }
 
 }

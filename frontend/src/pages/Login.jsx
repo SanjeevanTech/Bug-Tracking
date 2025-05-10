@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import api from '../api/axios';
 import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
   const [form, setForm] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -13,8 +15,14 @@ const Login = () => {
     
     try {
       const res = await api.post('/login', form);
-      localStorage.setItem('authToken', res.data.token);
-      navigate('/dashboard');
+      login(res.data.user, res.data.token);
+      
+      // Redirect based on role
+      if (res.data.user.role === 'admin') {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       if (err.response?.data?.errors) {
         // Handle validation errors from backend
@@ -81,6 +89,12 @@ const Login = () => {
           <p className="text-gray-600 mb-2">Don't have an account?</p>
           <Link to="/register" className="text-blue-500 hover:text-blue-700 font-medium">
             Register here
+          </Link>
+        </div>
+
+        <div className="text-center mt-4">
+          <Link to="/forgot-password" className="text-blue-500 hover:text-blue-700">
+            Forgot Password?
           </Link>
         </div>
       </div>

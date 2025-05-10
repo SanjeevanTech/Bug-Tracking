@@ -17,8 +17,8 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    Route::get('/users', [UserController::class, 'getAllUsers']);
     Route::delete('/delete/{id}', [UserController::class, 'deleteUser']);
-    
 });
 
 Route::middleware(['auth:sanctum', 'role:tester,admin'])->group(function () {
@@ -38,6 +38,11 @@ Route::middleware(['auth:sanctum', 'role:developer,admin'])->group(function () {
     Route::get('/assignedbugs', [BugController::class, 'assignedBugs']); // list view
     Route::get('/bug/{id}', [BugController::class, 'viewBug']); // detail view
 });
+
+Route::post('/forgot-password', [UserController::class, 'forgotPassword']);
+Route::post('/reset-password', [UserController::class, 'resetPassword']);
+
+Route::get('/bugs/reported-by/{userId}', [BugController::class, 'getBugsReportedByUser']);
 
 
 
