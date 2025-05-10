@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
@@ -50,56 +51,53 @@ class UserController extends Controller
     }
 
     public function login(Request $request){
-    $validator = Validator::make(
-        $request->all(),
-        [
-            'email'    => 'required|email',
-            'password' => 'required|string|min:6',
-        ],
-        [
-            'email.required'    => 'Email is required.',
-            'email.email'       => 'Please enter a valid email.',
-            'password.required' => 'Password is required.',
-            'password.min'      => 'Password must be at least 6 characters.',
-        ]
-    );
+        try {
+            $validator = Validator::make(
+                $request->all(),
+                [
+                    'email'    => 'required|email',
+                    'password' => 'required|string|min:6',
+                ],
+                [
+                    'email.required'    => 'Email is required.',
+                    'email.email'       => 'Please enter a valid email.',
+                    'password.required' => 'Password is required.',
+                    'password.min'      => 'Password must be at least 6 characters.',
+                ]
+            );
 
-    if ($validator->fails()) {
-        return response()->json([
-            'message' => 'Validation error',
-            'errors'  => $validator->errors()
-        ], 422);
-    }
-   
+            if ($validator->fails()) {
+                return response()->json([
+                    'message' => 'Validation error',
+                    'errors'  => $validator->errors()
+                ], 422);
+            }
 
-   
+            $user = User::where('email', $request->email)->first();
 
-    $user = User::where('email', $request->email)->first();
+            if (!$user || !Hash::check($request->password, $user->password)) {
+                return response()->json([
+                    'message' => 'Invalid email or password.'
+                ], 401);
+            }
 
-     if (!$user) {
-        return response()->json([
-            'message' => 'User not found.'
-        ], 404);
-    }
+            // Delete existing tokens
+            $user->tokens()->delete();
 
-    if (!$user || !Hash::check($request->password, $user->password)) {
-        return response()->json([
-            'message' => 'Invalid email or password.'
-        ], 401);
-    }
+            // Create new token
+            $token = $user->createToken('auth_token')->plainTextToken;
 
-    
-    $user->tokens()->delete();
-
-    
-    $token = $user->createToken('auth_token')->plainTextToken;
-
-    return response()->json([
-        'message' => 'Login successful',
-        'token'   => $token,
-        'user'    => $user,
-        
-    ]);
+            return response()->json([
+                'message' => 'Login successful',
+                'token'   => $token,
+                'user'    => $user
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'An error occurred during login',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function logout(Request $request){
@@ -174,7 +172,7 @@ public function getDetails(Request $request)
     {
         try {
             // Get all users except the current user
-            $users = User::where('id', '!=', auth()->id())
+            $users = User::where('id', '!=', Auth::id())
                         ->select('id', 'name', 'email', 'role')
                         ->get();
             

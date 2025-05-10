@@ -1,9 +1,45 @@
 // src/pages/Dashboard.jsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import api from '../api/axios';
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const [stats, setStats] = useState({
+    totalBugs: 0,
+    openBugs: 0,
+    inProgressBugs: 0,
+    resolvedBugs: 0,
+    closeBugs: 0,
+    assignedBugs: 0,
+    reopenedBugs: 0
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await api.get('/assignedbugs');
+        const bugs = response.data.bugs;
+        console.log('API Response:', response.data);
+        console.log('Total Bugs:', bugs.length);
+        console.log('Bugs:', bugs);
+        
+        setStats({
+          totalBugs: bugs.length,
+          openBugs: bugs.filter(bug => bug.status === 'open').length,
+          inProgressBugs: bugs.filter(bug => bug.status === 'in_progress').length,
+          resolvedBugs: bugs.filter(bug => bug.status === 'fixed').length,
+          closeBugs: bugs.filter(bug => bug.status === 'closed').length,
+          assignedBugs: bugs.filter(bug => bug.status === 'assigned').length,
+          reopenedBugs: bugs.filter(bug => bug.status === 'reopened').length
+        });
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   if (!user) {
     return <div>Loading...</div>;
@@ -17,18 +53,34 @@ const Dashboard = () => {
         </h1>
         
         {user.role === 'admin' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-blue-100 p-4 rounded-lg">
               <h3 className="font-semibold">Total Bugs</h3>
-              <p className="text-2xl">0</p>
-            </div>
-            <div className="bg-green-100 p-4 rounded-lg">
-              <h3 className="font-semibold">Resolved Bugs</h3>
-              <p className="text-2xl">0</p>
+              <p className="text-2xl">{stats.totalBugs}</p>
             </div>
             <div className="bg-yellow-100 p-4 rounded-lg">
-              <h3 className="font-semibold">Pending Bugs</h3>
-              <p className="text-2xl">0</p>
+              <h3 className="font-semibold">Open Bugs</h3>
+              <p className="text-2xl">{stats.openBugs}</p>
+            </div>
+            <div className="bg-purple-100 p-4 rounded-lg">
+              <h3 className="font-semibold">In Progress</h3>
+              <p className="text-2xl">{stats.inProgressBugs}</p>
+            </div>
+            <div className="bg-green-100 p-4 rounded-lg">
+              <h3 className="font-semibold">Resolved</h3>
+              <p className="text-2xl">{stats.resolvedBugs}</p>
+            </div>
+            <div className="bg-green-100 p-4 rounded-lg">
+              <h3 className="font-semibold">Assigned to</h3>
+              <p className="text-2xl">{stats.assignedBugs}</p>
+            </div>
+            <div className="bg-green-100 p-4 rounded-lg">
+              <h3 className="font-semibold">Re opened</h3>
+              <p className="text-2xl">{stats.reopenedBugs}</p>
+            </div>
+            <div className="bg-green-100 p-4 rounded-lg">
+              <h3 className="font-semibold">closed</h3>
+              <p className="text-2xl">{stats.closeBugs}</p>
             </div>
           </div>
         )}

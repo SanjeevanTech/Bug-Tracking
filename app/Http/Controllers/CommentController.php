@@ -32,16 +32,18 @@ class CommentController extends Controller
             }
 
             // Create comment
-            $commentData = Comment::create([
+            $comment = Comment::create([
                 'comment' => $validatedData['comment'], 
                 'bug_id'  => $validatedData['bug_id'],   
                 'user_id' => $userId,                    
             ]);
+
+            // Load the user relationship
+            $comment->load('user');
     
             return response()->json([
                 'message' => 'Comment added successfully.',
-                'comment' => $commentData,
-                'user'    => $user
+                'comment' => $comment
             ], 201);
     
         } catch (\Illuminate\Validation\ValidationException $e) {

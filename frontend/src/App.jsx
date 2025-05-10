@@ -12,10 +12,10 @@ import Dashboard from './pages/Dashboard';
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Login />} />
+        <Route path="/register" element={<Register />} />
           
           {/* Admin Routes */}
           <Route
@@ -41,8 +41,8 @@ function App() {
               </ProtectedRoute>
             }
           />
-        </Routes>
-      </BrowserRouter>
+      </Routes>
+    </BrowserRouter>
     </AuthProvider>
   );
 }
