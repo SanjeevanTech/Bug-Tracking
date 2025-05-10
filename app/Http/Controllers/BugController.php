@@ -77,8 +77,16 @@ class BugController extends Controller
 
             $user = Auth::user();
             
-            // Only check creator permission if user is not admin
-            if ($user->role !== 'admin' && Auth::id() !== $bug->created_by) {
+            // Allow developers to update status of assigned bugs
+            if ($user->role === 'developer') {
+                if ($bug->assigned_to !== $user->id) {
+                    return response()->json(['message' => 'Unauthorized. This bug is not assigned to you.'], 403);
+                }
+                // Only allow status updates for developers
+                if (count($request->all()) > 1 || !$request->has('status')) {
+                    return response()->json(['message' => 'Developers can only update bug status.'], 403);
+                }
+            } else if ($user->role !== 'admin' && Auth::id() !== $bug->created_by) {
                 return response()->json(['message' => 'Unauthorized. You can only update your own bugs.'], 403);
             }
 
@@ -200,7 +208,29 @@ class BugController extends Controller
             if (!$bug) {
                 return response()->json(['message' => 'Bug not found'], 404);
             }
-            return response()->json(['bug' => $bug]);
+
+            $user = Auth::user();
+
+            // Admin can see all bugs and comments
+            if ($user->role === 'admin') {
+                return response()->json(['bug' => $bug]);
+            }
+
+            // Developer can only see assigned bugs and their own comments
+            if ($user->role === 'developer') {
+                if ($bug->assigned_to !== $user->id) {
+                    return response()->json(['message' => 'Unauthorized. This bug is not assigned to you.'], 403);
+                }
+
+                // Filter comments to show only developer's own comments
+                $bug->comments = $bug->comments->filter(function($comment) use ($user) {
+                    return $comment->user_id === $user->id;
+                });
+
+                return response()->json(['bug' => $bug]);
+            }
+
+            return response()->json(['message' => 'Unauthorized.'], 403);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Error fetching bug', 'error' => $e->getMessage()], 500);
         }

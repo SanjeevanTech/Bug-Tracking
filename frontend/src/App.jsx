@@ -10,6 +10,7 @@ import UserList from './component/admin/UserList';
 import Dashboard from './pages/Dashboard';
 import TesterBugList from './pages/tester/TesterBugList';
 import CreateBug from './pages/tester/CreateBug';
+import DeveloperDashboard from './pages/developer/DeveloperDashboard';
 
 function App() {
   return (
@@ -48,6 +49,16 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['tester']}>
                 <CreateBug />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Developer Routes */}
+          <Route
+            path="/developer"
+            element={
+              <ProtectedRoute allowedRoles={['developer']}>
+                <DeveloperDashboard />
               </ProtectedRoute>
             }
           />

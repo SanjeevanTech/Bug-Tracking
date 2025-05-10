@@ -12,7 +12,8 @@ const DeveloperDashboard = () => {
   const [expandedBugId, setExpandedBugId] = useState(null);
   const [comments, setComments] = useState({});
   const [newComment, setNewComment] = useState('');
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     fetchBugs();
@@ -37,7 +38,7 @@ const DeveloperDashboard = () => {
     }
 
     try {
-      const response = await api.get(`/bug/${bug.id}`);
+      const response = await api.get(`/developer/bug/${bug.id}`);
       setComments(prev => ({
         ...prev,
         [bug.id]: response.data.bug.comments || []
@@ -53,9 +54,9 @@ const DeveloperDashboard = () => {
     try {
       await api.put(`/bugedit/${bugId}`, { status: newStatus });
       await fetchBugs(); // Refresh the bug list
-      setShowSuccessMessage(true);
+      setShowSuccessMessage(`Status updated to ${newStatus} successfully!`);
       setTimeout(() => {
-        setShowSuccessMessage(false);
+        setShowSuccessMessage('');
       }, 3000);
     } catch (err) {
       console.error('Error updating status:', err);
@@ -66,26 +67,51 @@ const DeveloperDashboard = () => {
   const handleAddComment = async (bugId) => {
     if (!newComment.trim()) return;
 
+    setIsSubmitting(true);
     try {
       await api.post('/commentcreate', {
         comment: newComment,
         bug_id: bugId
       });
 
-      // Refresh comments
-      const response = await api.get(`/bug/${bugId}`);
+      // Refresh comments using the correct endpoint
+      const response = await api.get(`/developer/bug/${bugId}`);
       setComments(prev => ({
         ...prev,
         [bugId]: response.data.bug.comments || []
       }));
-      setNewComment('');
-      setShowSuccessMessage(true);
+      setNewComment(''); // Clear the comment field
+      setShowSuccessMessage('Comment added successfully!');
       setTimeout(() => {
-        setShowSuccessMessage(false);
+        setShowSuccessMessage('');
       }, 3000);
     } catch (err) {
       console.error('Error adding comment:', err);
-      setError('Failed to add comment');
+      setError(err.response?.data?.message || 'Failed to add comment. Please try again.');
+      setTimeout(() => {
+        setError(null);
+      }, 3000);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteComment = async (bugId, commentId) => {
+    try {
+      await api.delete(`/commentdelete/${commentId}`);
+      // Refresh comments using the correct endpoint
+      const response = await api.get(`/developer/bug/${bugId}`);
+      setComments(prev => ({
+        ...prev,
+        [bugId]: response.data.bug.comments || []
+      }));
+      setShowSuccessMessage('Comment deleted successfully!');
+      setTimeout(() => {
+        setShowSuccessMessage('');
+      }, 3000);
+    } catch (err) {
+      console.error('Error deleting comment:', err);
+      setError('Failed to delete comment');
     }
   };
 
@@ -104,6 +130,8 @@ const DeveloperDashboard = () => {
     switch (status) {
       case 'open':
         return 'bg-blue-100 text-blue-800';
+      case 'assigned':
+        return 'bg-purple-100 text-purple-800';
       case 'in_progress':
         return 'bg-yellow-100 text-yellow-800';
       case 'fixed':
@@ -117,6 +145,25 @@ const DeveloperDashboard = () => {
     }
   };
 
+  const getNextStatusOptions = (currentStatus) => {
+    switch (currentStatus) {
+      case 'assigned':
+        return [{ value: 'in_progress', label: 'in_progress' }];
+      case 'in_progress':
+        return [{ value: 'fixed', label: 'fixed' }];
+      case 'fixed':
+        return [{ value: 'closed', label: 'closed' }];
+      case 'closed':
+        return []; // No options for closed status
+      case 'reopened':
+        return [{ value: 'in_progress', label: 'in_progress' }];
+      case 'open':
+        return [{ value: 'in_progress', label: 'in_progress' }];
+      default:
+        return [];
+    }
+  };
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div className="text-red-500">{error}</div>;
 
@@ -125,7 +172,14 @@ const DeveloperDashboard = () => {
       {/* Success Message Popup */}
       {showSuccessMessage && (
         <div className="fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded z-50">
-          Action completed successfully!
+          {showSuccessMessage}
+        </div>
+      )}
+
+      {/* Error Message Popup */}
+      {error && (
+        <div className="fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded z-50">
+          {error}
         </div>
       )}
 
@@ -191,28 +245,22 @@ const DeveloperDashboard = () => {
                     <div className="text-sm text-gray-500">
                       Reported by: {bug.creator ? bug.creator.name : 'Unknown'}
                     </div>
-                    <select
-                      value={bug.status}
-                      onChange={(e) => handleStatusChange(bug.id, e.target.value)}
-                      className="border rounded px-2 py-1 text-sm"
-                    >
-                      <option value={bug.status}>{bug.status}</option>
-                      {bug.status === 'assigned' && (
-                        <option value="in_progress">Start Progress</option>
-                      )}
-                      {bug.status === 'in_progress' && (
-                        <option value="fixed">Mark as Fixed</option>
-                      )}
-                      {bug.status === 'fixed' && (
-                        <option value="closed">Close Bug</option>
-                      )}
-                      {bug.status === 'closed' && (
-                        <option value="reopened">Reopen Bug</option>
-                      )}
-                      {bug.status === 'reopened' && (
-                        <option value="in_progress">Start Progress</option>
-                      )}
-                    </select>
+                    {bug.status !== 'closed' ? (
+                      <select
+                        value={bug.status}
+                        onChange={(e) => handleStatusChange(bug.id, e.target.value)}
+                        className="border rounded px-2 py-1 text-sm"
+                      >
+                        <option value={bug.status}>{bug.status}</option>
+                        {getNextStatusOptions(bug.status).map(option => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span className="text-gray-500 text-sm">Status: Closed</span>
+                    )}
                   </div>
 
                   {/* Comments Section */}
@@ -220,32 +268,54 @@ const DeveloperDashboard = () => {
                     <div className="mt-6 border-t pt-4">
                       <h4 className="text-lg font-semibold mb-4">Comments</h4>
                       <div className="space-y-4">
-                        {comments[bug.id]?.map((comment) => (
-                          <div key={comment.id} className="bg-gray-50 p-3 rounded">
-                            <div className="flex justify-between items-start mb-2">
-                              <span className="font-medium text-sm">{comment.user?.name}</span>
-                              <span className="text-xs text-gray-500">
-                                {new Date(comment.created_at).toLocaleString()}
-                              </span>
+                        {comments[bug.id]?.length === 0 ? (
+                          <div className="text-gray-500 text-center py-4">No comments yet</div>
+                        ) : (
+                          comments[bug.id]?.map((comment) => (
+                            <div key={comment.id} className="bg-gray-50 p-3 rounded">
+                              <div className="flex justify-between items-start mb-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-sm">{comment.user?.name}</span>
+                                  <span className="text-xs text-gray-500">
+                                    {new Date(comment.created_at).toLocaleString()}
+                                  </span>
+                                </div>
+                                {comment.user?.id === user?.id && bug.status !== 'closed' && (
+                                  <button
+                                    onClick={() => handleDeleteComment(bug.id, comment.id)}
+                                    className="text-red-500 hover:text-red-700 text-sm"
+                                  >
+                                    Delete
+                                  </button>
+                                )}
+                              </div>
+                              <p className="text-sm text-gray-700">{comment.comment}</p>
                             </div>
-                            <p className="text-sm text-gray-700">{comment.comment}</p>
+                          ))
+                        )}
+                        {bug.status !== 'closed' && (
+                          <div className="mt-4">
+                            <textarea
+                              value={newComment}
+                              onChange={(e) => setNewComment(e.target.value)}
+                              placeholder="Add a comment..."
+                              className="w-full p-2 border rounded"
+                              rows="2"
+                              disabled={isSubmitting}
+                            />
+                            <button
+                              onClick={() => handleAddComment(bug.id)}
+                              disabled={isSubmitting || !newComment.trim()}
+                              className={`mt-2 px-4 py-2 rounded text-white ${
+                                isSubmitting || !newComment.trim()
+                                  ? 'bg-gray-400 cursor-not-allowed'
+                                  : 'bg-blue-500 hover:bg-blue-600'
+                              }`}
+                            >
+                              {isSubmitting ? 'Adding...' : 'Add Comment'}
+                            </button>
                           </div>
-                        ))}
-                        <div className="mt-4">
-                          <textarea
-                            value={newComment}
-                            onChange={(e) => setNewComment(e.target.value)}
-                            placeholder="Add a comment..."
-                            className="w-full p-2 border rounded"
-                            rows="2"
-                          />
-                          <button
-                            onClick={() => handleAddComment(bug.id)}
-                            className="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                          >
-                            Add Comment
-                          </button>
-                        </div>
+                        )}
                       </div>
                     </div>
                   )}

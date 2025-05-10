@@ -19,6 +19,7 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::get('/users', [UserController::class, 'getAllUsers']);
     Route::delete('/delete/{id}', [UserController::class, 'deleteUser']);
     Route::get('/bugs', [BugController::class, 'getAllBugs']); // Admin gets all bugs
+    Route::get('/admin/bug/{id}', [BugController::class, 'getBug']); // Admin bug detail view
 });
 
 Route::middleware(['auth:sanctum', 'role:tester'])->group(function () {
@@ -37,7 +38,7 @@ Route::middleware(['auth:sanctum', 'role:developer,admin'])->group(function () {
 
 Route::middleware(['auth:sanctum', 'role:developer,admin'])->group(function () {
     Route::get('/assignedbugs', [BugController::class, 'assignedBugs']); // list view
-    Route::get('/bug/{id}', [BugController::class, 'viewBug']); // detail view
+    Route::get('/developer/bug/{id}', [BugController::class, 'getBug']); // Developer bug detail view
 });
 
 

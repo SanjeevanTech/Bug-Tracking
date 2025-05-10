@@ -16,11 +16,12 @@ const BugList = () => {
     priority: 'Medium'
   });
   const [developers, setDevelopers] = useState([]);
+  const [showSuccessMessage, setShowSuccessMessage] = useState('');
 
   const fetchBugs = async () => {
     try {
-      const response = await api.get('/assignedbugs');
-      setBugs(response.data.bugs);
+      const bugsResponse = await api.get('/assignedbugs');
+      setBugs(bugsResponse.data.bugs);
       setLoading(false);
     } catch (err) {
       setError('Failed to fetch bugs');
@@ -30,8 +31,8 @@ const BugList = () => {
 
   const fetchBugComments = async (bugId) => {
     try {
-      const response = await api.get(`/bug/${bugId}`);
-      setComments(response.data.bug.comments || []);
+      const commentsResponse = await api.get(`/admin/bug/${bugId}`);
+      setComments(commentsResponse.data.bug.comments || []);
     } catch (err) {
       setError('Failed to fetch comments');
     }
@@ -109,6 +110,10 @@ const BugList = () => {
         if (selectedBug) {
           fetchBugComments(selectedBug.id);
         }
+        setShowSuccessMessage('Comment deleted successfully!');
+        setTimeout(() => {
+          setShowSuccessMessage('');
+        }, 3000);
       } catch (err) {
         setError('Failed to delete comment');
       }
@@ -446,6 +451,12 @@ const BugList = () => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {showSuccessMessage && (
+        <div className="mt-4 p-4 bg-green-100 text-green-800 rounded-lg">
+          {showSuccessMessage}
         </div>
       )}
     </div>
