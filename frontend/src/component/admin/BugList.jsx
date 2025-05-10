@@ -149,7 +149,8 @@ const BugList = () => {
       setBugs(bugs.map(bug => 
         bug.id === bugId ? { 
           ...bug, 
-          assigned_to: developerId, 
+          assigned_to: developerId,
+          assignee: developers.find(dev => dev.id === parseInt(developerId)),
           status: developerId ? 'assigned' : 'open'
         } : bug
       ));
@@ -159,6 +160,7 @@ const BugList = () => {
         setSelectedBug({ 
           ...selectedBug, 
           assigned_to: developerId,
+          assignee: developers.find(dev => dev.id === parseInt(developerId)),
           status: developerId ? 'assigned' : 'open'
         });
       }

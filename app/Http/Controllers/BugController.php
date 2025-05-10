@@ -75,6 +75,13 @@ class BugController extends Controller
                 return response()->json(['message' => 'Bug not found'], 404);
             }
 
+            $user = Auth::user();
+            
+            // Only check creator permission if user is not admin
+            if ($user->role !== 'admin' && Auth::id() !== $bug->created_by) {
+                return response()->json(['message' => 'Unauthorized. You can only update your own bugs.'], 403);
+            }
+
             $validatedData = $request->validate([
                 'title' => 'sometimes|required|string|max:255',
                 'description' => 'sometimes|required|string',
@@ -138,10 +145,14 @@ class BugController extends Controller
             $bugs = Bug::where('assigned_to', $user->id)
                       ->with(['creator' => function($query) {
                           $query->select('id', 'name', 'role');
+                      }, 'assignee' => function($query) {
+                          $query->select('id', 'name', 'role');
                       }])
                       ->get();
         } elseif ($user->role === 'admin') {
             $bugs = Bug::with(['creator' => function($query) {
+                $query->select('id', 'name', 'role');
+            }, 'assignee' => function($query) {
                 $query->select('id', 'name', 'role');
             }])->get(); // Admin sees all
         } else {
@@ -192,6 +203,46 @@ class BugController extends Controller
             return response()->json(['bug' => $bug]);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Error fetching bug', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    // Get all bugs (for admin)
+    public function getAllBugs()
+    {
+        try {
+            $bugs = Bug::with(['creator' => function($query) {
+                $query->select('id', 'name', 'role');
+            }])->get();
+            
+            return response()->json(['bugs' => $bugs]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error fetching bugs',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // Get tester's own bugs
+    public function getTesterBugs()
+    {
+        try {
+            $user = Auth::user();
+            
+            $bugs = Bug::where('created_by', $user->id)
+                ->with(['creator' => function($query) {
+                    $query->select('id', 'name', 'role');
+                }, 'assignee' => function($query) {
+                    $query->select('id', 'name', 'role');
+                }])
+                ->get();
+            
+            return response()->json(['bugs' => $bugs]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error fetching bugs',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 

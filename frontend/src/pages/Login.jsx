@@ -18,10 +18,15 @@ const Login = () => {
       login(res.data.user, res.data.token);
       
       // Redirect based on role
-      if (res.data.user.role === 'admin') {
-        navigate('/admin/dashboard');
-      } else {
-        navigate('/dashboard');
+      switch (res.data.user.role) {
+        case 'admin':
+          navigate('/admin/dashboard');
+          break;
+        case 'tester':
+          navigate('/tester');
+          break;
+        default:
+          navigate('/dashboard');
       }
     } catch (err) {
       if (err.response?.data?.errors) {

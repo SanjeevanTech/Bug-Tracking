@@ -8,6 +8,8 @@ import AdminLayout from './component/layout/AdminLayout';
 import BugList from './component/admin/BugList';
 import UserList from './component/admin/UserList';
 import Dashboard from './pages/Dashboard';
+import TesterBugList from './pages/tester/TesterBugList';
+import CreateBug from './pages/tester/CreateBug';
 
 function App() {
   return (
@@ -31,6 +33,24 @@ function App() {
             <Route path="bugs" element={<BugList />} />
             <Route path="users" element={<UserList />} />
           </Route>
+
+          {/* Tester Routes */}
+          <Route
+            path="/tester"
+            element={
+              <ProtectedRoute allowedRoles={['tester']}>
+                <TesterBugList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tester/create-bug"
+            element={
+              <ProtectedRoute allowedRoles={['tester']}>
+                <CreateBug />
+              </ProtectedRoute>
+            }
+          />
 
           {/* User Dashboard */}
           <Route

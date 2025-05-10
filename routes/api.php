@@ -13,25 +13,26 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/getDetails', [UserController::class, 'getDetails']);
     Route::put('/edit/{id}', [UserController::class, 'updateUser']);
     Route::put('/bugedit/{id}', [BugController::class, 'updateBug']);
-    
 });
 
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::get('/users', [UserController::class, 'getAllUsers']);
     Route::delete('/delete/{id}', [UserController::class, 'deleteUser']);
+    Route::get('/bugs', [BugController::class, 'getAllBugs']); // Admin gets all bugs
 });
 
-Route::middleware(['auth:sanctum', 'role:tester,admin'])->group(function () {
+Route::middleware(['auth:sanctum', 'role:tester'])->group(function () {
+    Route::get('/tester/bugs', [BugController::class, 'getTesterBugs']); // Tester gets only their bugs
     Route::post('/bugcreate', [BugController::class, 'createbug']);
     Route::delete('/bugDelete/{id}', [BugController::class, 'deleteBug']);
-    
+    Route::put('/tester/bugs/{id}', [BugController::class, 'updateBug']);
+    Route::get('/tester/bug/{id}', [BugController::class, 'getBug']);
 });
 
 Route::middleware(['auth:sanctum', 'role:developer,admin'])->group(function () {
     Route::post('/commentcreate', [CommentController::class, 'createComment']);
     Route::put('/commentedit/{id}', [CommentController::class, 'updateComment']);
     Route::delete('/commentdelete/{id}', [CommentController::class, 'deleteComment']);
-    
 });
 
 Route::middleware(['auth:sanctum', 'role:developer,admin'])->group(function () {
