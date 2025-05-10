@@ -8,7 +8,6 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
@@ -98,7 +97,8 @@ class UserController extends Controller
     return response()->json([
         'message' => 'Login successful',
         'token'   => $token,
-        'user'    => $user
+        'user'    => $user,
+        
     ]);
     }
 
@@ -118,21 +118,21 @@ class UserController extends Controller
         ]);
     }
 
-    public function getDetails(){
-        $userId = Auth::id();
-        if (!$userId) {
-            return response()->json([
-                'message' => 'Unauthorized. Please login to report a bug.'
-            ], 401);
-        }
-
-        $users = User::select('name', 'email')->get();
-
+public function getDetails(Request $request)
+{
+    $user = $request->user(); // Gets authenticated user
+    
+    if (!$user) {
         return response()->json([
-            'message' => 'User details retrieved successfully',
-            'users' => $users
-        ], 200);
+            'message' => 'Unauthorized. Please login to report a bug.'
+        ], 401);
     }
+
+    return response()->json([
+        'message' => 'User details retrieved successfully',
+        'user' => $user->only(['id', 'name', 'email', 'role']) // Explicitly select fields
+    ], 200);
+}
 
    public function updateUser(Request $request, $id){
         $user = User::find($id);
