@@ -39,11 +39,6 @@ Route::middleware(['auth:sanctum', 'role:developer,admin'])->group(function () {
     Route::get('/bug/{id}', [BugController::class, 'viewBug']); // detail view
 });
 
-Route::post('/forgot-password', [UserController::class, 'forgotPassword']);
-Route::post('/reset-password', [UserController::class, 'resetPassword']);
-
-Route::get('/bugs/reported-by/{userId}', [BugController::class, 'getBugsReportedByUser']);
-
 
 
 

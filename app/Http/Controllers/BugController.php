@@ -199,14 +199,4 @@ class BugController extends Controller
         return response()->json(['bug' => $bug]);
     }
 
-    public function getBugsReportedByUser($userId)
-    {
-        $bugs = Bug::where('reported_by', $userId)
-                    ->with(['assignedTo', 'reportedBy'])
-                    ->orderBy('created_at', 'desc')
-                    ->get();
-
-        return response()->json($bugs);
-    }
-
 }
