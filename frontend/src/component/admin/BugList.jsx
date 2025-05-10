@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../../api/axios';
+import Navbar from '../../components/Navbar';
 
 const BugList = () => {
   const [bugs, setBugs] = useState([]);
@@ -179,6 +180,8 @@ const BugList = () => {
 
   return (
     <div className="space-y-6">
+      <Navbar title="Admin Dashboard" />
+      
       {/* Create Bug Button */}
       <div className="flex justify-end">
         <button

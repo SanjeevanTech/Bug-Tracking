@@ -107,8 +107,10 @@ const Register = () => {
             >
               <option value="tester">Tester</option>
               <option value="developer">Developer</option>
-              <option value="admin">Admin</option>
             </select>
+            <p className="mt-1 text-sm text-gray-500">
+              Note: Admin accounts can only be created by existing administrators.
+            </p>
           </div>
 
           <button

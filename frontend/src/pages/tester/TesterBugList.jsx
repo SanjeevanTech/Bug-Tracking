@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
+import Navbar from '../../components/Navbar';
 
 const TesterBugList = () => {
   const [bugs, setBugs] = useState([]);
@@ -17,7 +18,7 @@ const TesterBugList = () => {
     priority: ''
   });
   const [isUpdating, setIsUpdating] = useState(false);
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState('');
   const [expandedBugId, setExpandedBugId] = useState(null);
   const [comments, setComments] = useState({});
 
@@ -81,11 +82,7 @@ const TesterBugList = () => {
       await fetchBugs(); // Refresh the bug list
       setIsEditModalOpen(false);
       setSelectedBug(null);
-      setShowSuccessMessage(true);
-      // Hide success message after 3 seconds
-      setTimeout(() => {
-        setShowSuccessMessage(false);
-      }, 3000);
+      setShowSuccessMessage('Bug updated successfully!');
     } catch (err) {
       console.error('Error updating bug:', err);
       setError(err.response?.data?.message || 'Failed to update bug');
@@ -98,10 +95,7 @@ const TesterBugList = () => {
     try {
       await api.put(`/tester/bugs/${bugId}`, { status: newStatus });
       await fetchBugs(); // Refresh the bug list
-      setShowSuccessMessage(true);
-      setTimeout(() => {
-        setShowSuccessMessage(false);
-      }, 3000);
+      setShowSuccessMessage('Status updated successfully!');
     } catch (err) {
       console.error('Error updating status:', err);
       setError(err.response?.data?.message || 'Failed to update status');
@@ -154,28 +148,18 @@ const TesterBugList = () => {
       {/* Success Message Popup */}
       {showSuccessMessage && (
         <div className="fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded z-50">
-          Bug updated successfully!
+          {showSuccessMessage}
         </div>
       )}
 
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-semibold">Bug Management System</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-gray-700">Welcome, {user?.name} ({user?.role})</span>
-              <button
-                onClick={handleLogout}
-                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
+      {/* Error Message Popup */}
+      {error && (
+        <div className="fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded z-50">
+          {error}
         </div>
-      </nav>
+      )}
+
+      <Navbar title="Bug Management System" />
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
