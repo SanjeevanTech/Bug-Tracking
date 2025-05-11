@@ -36,12 +36,10 @@ Route::middleware(['auth:sanctum', 'role:tester'])->group(function () {
     Route::get('/tester/bugs', [BugController::class, 'getTesterBugs']);
     Route::post('/tester/bug', [BugController::class, 'createbug']);
     Route::delete('/tester/bug/{id}', [BugController::class, 'deleteBug']);
-    Route::put('/tester/bug/{id}', [BugController::class, 'updateBug']);
+    Route::put('/tester/bug/{id}', [BugController::class, 'testerUpdateBug']);
     Route::get('/tester/bug/{id}', [BugController::class, 'getTesterBug']);
     Route::get('/tester/bug/{id}/comments', [BugController::class, 'getTesterBugComments']);
     
-    // New tester-specific routes
-    Route::put('/tester/bug/{id}/edit', [BugController::class, 'testerUpdateBug']);
     Route::get('/tester/bug/{id}/view', [BugController::class, 'testerViewBug']);
     Route::delete('/tester/bug/{id}/delete', [BugController::class, 'testerDeleteBug']);
 });

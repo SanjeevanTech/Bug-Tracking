@@ -78,7 +78,8 @@ const TesterBugList = () => {
     setIsUpdating(true);
     setError(null);
     try {
-      await api.put(`/tester/bugs/${selectedBug.id}`, editForm);
+      await api.put(`/tester/bug/${selectedBug.id}`, editForm);
+      
       await fetchBugs(); // Refresh the bug list
       setIsEditModalOpen(false);
       setSelectedBug(null);
@@ -93,7 +94,7 @@ const TesterBugList = () => {
 
   const handleStatusChange = async (bugId, newStatus) => {
     try {
-      await api.put(`/tester/bugs/${bugId}`, { status: newStatus });
+      await api.put(`/tester/bug/${bugId}`, { status: newStatus });
       await fetchBugs(); // Refresh the bug list
       setShowSuccessMessage('Status updated successfully!');
     } catch (err) {

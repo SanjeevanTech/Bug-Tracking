@@ -67,30 +67,7 @@ class BugController extends Controller
         }
     }
 
-    public function updateBug(Request $request, $id)
-    {
-        try {
-            $bug = Bug::find($id);
-            if (!$bug) {
-                return response()->json(['message' => 'Bug not found'], 404);
-            }
-
-            $user = Auth::user();
-            if ($bug->assigned_to !== $user->id) {
-                return response()->json(['message' => 'Unauthorized. You can only update bugs assigned to you.'], 403);
-            }
-
-            $validatedData = $request->validate([
-                'status' => 'required|in:in_progress,fixed'
-            ]);
-
-            $bug->update($validatedData);
-            return response()->json(['message' => 'Bug updated successfully', 'bug' => $bug]);
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Error updating bug', 'error' => $e->getMessage()], 500);
-        }
-    }
-
+    
     public function deleteBug($id)
     {
         $bug = Bug::find($id);
@@ -289,13 +266,12 @@ class BugController extends Controller
             $validatedData = $request->validate([
                 'title' => 'sometimes|required|string',
                 'description' => 'sometimes|required|string',
-                'priority' => 'sometimes|required|in:Low,Medium,High',
-                'status' => 'sometimes|required|in:open,assigned,in_progress,fixed,reopened,closed',
-                'assigned_to' => 'sometimes|required|exists:users,id'
+                'priority' => 'sometimes|required|in:Low,Medium,High'
+               
             ]);
 
             $bug->update($validatedData);
-            $bug->load(['creator', 'assignee']);
+            
 
             return response()->json([
                 'message' => 'Bug updated successfully',
@@ -500,26 +476,24 @@ class BugController extends Controller
     // New tester-specific methods
     public function testerUpdateBug(Request $request, $id)
     {
-        try {
-            $bug = Bug::find($id);
-            if (!$bug) {
-                return response()->json(['message' => 'Bug not found'], 404);
-            }
-
-            $user = Auth::user();
-            if ($bug->created_by !== $user->id) {
-                return response()->json(['message' => 'Unauthorized. You can only update your own bugs.'], 403);
-            }
-
+         try {
+            $bug = Bug::findOrFail($id);
+            
             $validatedData = $request->validate([
-                'title' => 'required|string',
-                'description' => 'required|string',
-                'priority' => 'required|in:Low,Medium,High',
-                'status' => 'required|in:open,in_progress,fixed,closed'
+                'title' => 'sometimes|required|string',
+                'description' => 'sometimes|required|string',
+                'priority' => 'sometimes|required|in:Low,Medium,High',
+                'status' => 'sometimes|required|in:open,assigned,in_progress,fixed,reopened,closed',
+                'assigned_to' => 'sometimes|required|exists:users,id'
             ]);
 
             $bug->update($validatedData);
-            return response()->json(['message' => 'Bug updated successfully', 'bug' => $bug]);
+            $bug->load(['creator', 'assignee']);
+
+            return response()->json([
+                'message' => 'Bug updated successfully',
+                'bug' => $bug
+            ]);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Error updating bug', 'error' => $e->getMessage()], 500);
         }

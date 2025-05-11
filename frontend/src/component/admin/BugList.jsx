@@ -267,39 +267,9 @@ const BugList = () => {
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Status</label>
-              <select
-                value={newBug.status}
-                onChange={(e) => setNewBug({ ...newBug, status: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                required
-              >
-                <option value="open">Open</option>
-                <option value="assigned">Assigned</option>
-                <option value="in_progress">In Progress</option>
-                <option value="fixed">Fixed</option>
-                <option value="reopened">Reopened</option>
-                <option value="closed">Closed</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Assign To</label>
-              <select
-                value={newBug.assigned_to}
-                onChange={(e) => setNewBug({ ...newBug, assigned_to: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                required
-              >
-                <option value="">Select Developer</option>
-                {developers.map(dev => (
-                  <option key={dev.id} value={dev.id}>
-                    {dev.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+          
+            
+            
 
             <div className="flex space-x-4">
               <button
