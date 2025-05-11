@@ -20,7 +20,7 @@ const Login = () => {
       // Redirect based on role
       switch (res.data.user.role) {
         case 'admin':
-          navigate('/admin/dashboard');
+        navigate('/admin/dashboard');
           break;
         case 'tester':
           navigate('/tester');
@@ -29,7 +29,7 @@ const Login = () => {
           navigate('/developer');
           break;
         default:
-          navigate('/dashboard');
+        navigate('/dashboard');
       }
     } catch (err) {
       if (err.response?.data?.errors) {

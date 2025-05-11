@@ -112,4 +112,22 @@ class CommentController extends Controller
 
         return response()->json(['message' => 'Comment deleted successfully.']);
     }
+
+    public function adminDeleteComment($id)
+    {
+        try {
+            $comment = Comment::find($id);
+            
+            if (!$comment) {
+                return response()->json(['message' => 'Comment not found.'], 404);
+            }
+
+            // Admin can delete any comment
+            $comment->delete();
+            
+            return response()->json(['message' => 'Comment deleted successfully.']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Error deleting comment', 'error' => $e->getMessage()], 500);
+        }
+    }
 }

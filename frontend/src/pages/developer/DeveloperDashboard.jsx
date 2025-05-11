@@ -35,19 +35,34 @@ const DeveloperDashboard = () => {
   const handleViewComments = async (bug) => {
     if (expandedBugId === bug.id) {
       setExpandedBugId(null);
+      setComments(prev => ({
+        ...prev,
+        [bug.id]: []
+      }));
       return;
     }
 
     try {
       const response = await api.get(`/developer/bug/${bug.id}`);
-      setComments(prev => ({
-        ...prev,
-        [bug.id]: response.data.bug.comments || []
-      }));
-      setExpandedBugId(bug.id);
+      if (response.data && response.data.bug) {
+        setComments(prev => ({
+          ...prev,
+          [bug.id]: response.data.bug.comments || []
+        }));
+        setExpandedBugId(bug.id);
+      } else {
+        setError('Invalid response from server');
+      }
     } catch (err) {
       console.error('Error fetching comments:', err);
-      setError('Failed to fetch comments');
+      if (err.response?.status === 403) {
+        setError('You are not authorized to view this bug');
+      } else if (err.response?.status === 404) {
+        setError('Bug not found');
+      } else {
+        setError('Failed to fetch comments. Please try again.');
+      }
+      setExpandedBugId(null);
     }
   };
 
@@ -149,17 +164,17 @@ const DeveloperDashboard = () => {
   const getNextStatusOptions = (currentStatus) => {
     switch (currentStatus) {
       case 'assigned':
-        return [{ value: 'in_progress', label: 'in_progress' }];
+        return [{ value: 'in_progress', label: 'In Progress' }];
       case 'in_progress':
-        return [{ value: 'fixed', label: 'fixed' }];
+        return [{ value: 'fixed', label: 'Fixed' }];
       case 'fixed':
-        return [{ value: 'closed', label: 'closed' }];
+        return [];
       case 'closed':
-        return []; // No options for closed status
+        return [];
       case 'reopened':
-        return [{ value: 'in_progress', label: 'in_progress' }];
+        return [{ value: 'in_progress', label: 'In Progress' }];
       case 'open':
-        return [{ value: 'in_progress', label: 'in_progress' }];
+        return [{ value: 'in_progress', label: 'In Progress' }];
       default:
         return [];
     }

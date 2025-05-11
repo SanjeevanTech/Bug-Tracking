@@ -8,29 +8,54 @@ const BugDetails = () => {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  useEffect(() => {
-    fetchBugDetails();
-    fetchComments();
-  }, [id]);
+  const [newComment, setNewComment] = useState('');
 
   const fetchBugDetails = async () => {
     try {
-      const response = await api.get(`/bugs/${id}`);
-      setBug(response.data);
+      const response = await api.get(`/tester/bug/${id}`);
+      if (response.data && response.data.bug) {
+        setBug(response.data.bug);
+        if (response.data.bug.comments) {
+          setComments(response.data.bug.comments);
+        }
+      } else {
+        setError('Invalid response from server');
+      }
     } catch (err) {
-      setError('Failed to fetch bug details');
+      console.error('Error fetching bug details:', err);
+      if (err.response?.status === 403) {
+        setError('You are not authorized to view this bug');
+      } else if (err.response?.status === 404) {
+        setError('Bug not found');
+      } else {
+        setError('Failed to fetch bug details. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchComments = async () => {
+  useEffect(() => {
+    fetchBugDetails();
+  }, [id]);
+
+  const handleAddComment = async (e) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
+
     try {
-      const response = await api.get(`/bugs/${id}/comments`);
-      setComments(response.data);
+      const response = await api.post('/commentcreate', {
+        bug_id: id,
+        content: newComment
+      });
+
+      if (response.data && response.data.comment) {
+        setComments(prevComments => [...prevComments, response.data.comment]);
+        setNewComment('');
+      }
     } catch (err) {
-      console.error('Failed to fetch comments:', err);
+      console.error('Failed to add comment:', err);
+      setError('Failed to add comment. Please try again.');
     }
   };
 
@@ -58,7 +83,7 @@ const BugDetails = () => {
           </div>
           <div>
             <p className="text-gray-600">Created By</p>
-            <p className="font-semibold">{bug.created_by.name}</p>
+            <p className="font-semibold">{bug.creator ? bug.creator.name : 'Unknown'}</p>
           </div>
         </div>
 
@@ -70,17 +95,21 @@ const BugDetails = () => {
         <div>
           <h2 className="text-xl font-semibold mb-4">Comments</h2>
           <div className="space-y-4">
-            {comments.map((comment) => (
-              <div key={comment.id} className="border-b pb-4">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-semibold">{comment.user.name}</span>
-                  <span className="text-sm text-gray-500">
-                    {new Date(comment.created_at).toLocaleString()}
-                  </span>
+            {comments && comments.length > 0 ? (
+              comments.map((comment) => (
+                <div key={comment.id} className="border-b pb-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-semibold">{comment.user ? comment.user.name : 'Unknown'}</span>
+                    <span className="text-sm text-gray-500">
+                      {new Date(comment.created_at).toLocaleString()}
+                    </span>
+                  </div>
+                  <p className="text-gray-700">{comment.comment}</p>
                 </div>
-                <p className="text-gray-700">{comment.content}</p>
-              </div>
-            ))}
+              ))
+            ) : (
+              <div className="text-gray-500 text-center py-4">No comments yet</div>
+            )}
           </div>
         </div>
       </div>

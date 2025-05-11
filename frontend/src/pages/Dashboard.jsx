@@ -18,7 +18,15 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await api.get('/assignedbugs');
+        let response;
+        if (user.role === 'admin') {
+          response = await api.get('/admin/bugs');
+        } else if (user.role === 'developer') {
+          response = await api.get('/assignedbugs');
+        } else if (user.role === 'tester') {
+          response = await api.get('/tester/bugs');
+        }
+
         const bugs = response.data.bugs;
         console.log('API Response:', response.data);
         console.log('Total Bugs:', bugs.length);
@@ -38,8 +46,10 @@ const Dashboard = () => {
       }
     };
 
-    fetchStats();
-  }, []);
+    if (user) {
+      fetchStats();
+    }
+  }, [user]);
 
   if (!user) {
     return <div>Loading...</div>;

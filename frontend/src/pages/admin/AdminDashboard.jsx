@@ -12,7 +12,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await api.get('/user');
+        const response = await api.get('/getDetails');
         setUser(response.data);
         return response.data;
       } catch (err) {
@@ -23,8 +23,8 @@ const AdminDashboard = () => {
 
     const fetchAllBugs = async () => {
       try {
-        const response = await api.get('/bugs');
-        setBugs(response.data);
+        const response = await api.get('/admin/bugs');
+        setBugs(response.data.bugs);
       } catch (err) {
         setError('Failed to fetch bugs');
       } finally {
@@ -94,17 +94,17 @@ const AdminDashboard = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                      ${bug.priority === 'high' ? 'bg-red-100 text-red-800' : 
-                        bug.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' : 
+                      ${bug.priority === 'High' ? 'bg-red-100 text-red-800' : 
+                        bug.priority === 'Medium' ? 'bg-yellow-100 text-yellow-800' : 
                         'bg-green-100 text-green-800'}`}>
                       {bug.priority}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {bug.reported_by ? bug.reported_by.name : 'Unknown'}
+                    {bug.creator ? bug.creator.name : 'Unknown'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {bug.assigned_to ? bug.assigned_to.name : 'Not Assigned'}
+                    {bug.assignee ? bug.assignee.name : 'Not Assigned'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {new Date(bug.created_at).toLocaleDateString()}

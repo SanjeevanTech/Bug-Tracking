@@ -14,15 +14,17 @@ const BugList = () => {
   const [newBug, setNewBug] = useState({
     title: '',
     description: '',
-    priority: 'Medium'
+    priority: 'Medium',
+    status: 'open',
+    assigned_to: ''
   });
   const [developers, setDevelopers] = useState([]);
   const [showSuccessMessage, setShowSuccessMessage] = useState('');
 
   const fetchBugs = async () => {
     try {
-      const bugsResponse = await api.get('/assignedbugs');
-      setBugs(bugsResponse.data.bugs);
+      const response = await api.get('/admin/bugs');
+      setBugs(response.data.bugs);
       setLoading(false);
     } catch (err) {
       setError('Failed to fetch bugs');
@@ -32,8 +34,8 @@ const BugList = () => {
 
   const fetchBugComments = async (bugId) => {
     try {
-      const commentsResponse = await api.get(`/admin/bug/${bugId}`);
-      setComments(commentsResponse.data.bug.comments || []);
+      const response = await api.get(`/admin/bug/${bugId}/comments`);
+      setComments(response.data.comments || []);
     } catch (err) {
       setError('Failed to fetch comments');
     }
@@ -56,7 +58,7 @@ const BugList = () => {
 
   const handleStatusChange = async (bugId, newStatus) => {
     try {
-      const response = await api.put(`/bugedit/${bugId}`, { status: newStatus });
+      const response = await api.put(`/admin/bug/${bugId}`, { status: newStatus });
       
       // Update the bug in the local state
       setBugs(bugs.map(bug => 
@@ -75,7 +77,7 @@ const BugList = () => {
   const handleDeleteBug = async (bugId) => {
     if (window.confirm('Are you sure you want to delete this bug?')) {
       try {
-        await api.delete(`/bugDelete/${bugId}`);
+        await api.delete(`/admin/bug/${bugId}`);
         fetchBugs();
       } catch (err) {
         setError('Failed to delete bug');
@@ -88,8 +90,8 @@ const BugList = () => {
     
     try {
       const response = await api.post('/commentcreate', {
-        comment: newComment,
-        bug_id: bugId
+        bug_id: bugId,
+        comment: newComment
       });
       
       // Add the new comment to the comments list
@@ -97,9 +99,10 @@ const BugList = () => {
       setNewComment('');
       
       // Refresh the bug details to get updated comments
-      const bugResponse = await api.get(`/bug/${bugId}`);
+      const bugResponse = await api.get(`/admin/bug/${bugId}`);
       setSelectedBug(bugResponse.data.bug);
     } catch (err) {
+      console.error('Error adding comment:', err);
       setError('Failed to add comment');
     }
   };
@@ -107,7 +110,7 @@ const BugList = () => {
   const handleDeleteComment = async (commentId) => {
     if (window.confirm('Are you sure you want to delete this comment?')) {
       try {
-        await api.delete(`/commentdelete/${commentId}`);
+        await api.delete(`/admin/comment/${commentId}`);
         if (selectedBug) {
           fetchBugComments(selectedBug.id);
         }
@@ -116,27 +119,58 @@ const BugList = () => {
           setShowSuccessMessage('');
         }, 3000);
       } catch (err) {
+        console.error('Error deleting comment:', err);
         setError('Failed to delete comment');
       }
+    }
+  };
+
+  const handleEditComment = async (commentId, newContent) => {
+    try {
+      await api.put(`/admin/bug/comment/${commentId}`, {
+        content: newContent
+      });
+      if (selectedBug) {
+        fetchBugComments(selectedBug.id);
+      }
+      setShowSuccessMessage('Comment updated successfully!');
+      setTimeout(() => {
+        setShowSuccessMessage('');
+      }, 3000);
+    } catch (err) {
+      setError('Failed to update comment');
     }
   };
 
   const handleCreateBug = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/bugcreate', newBug);
-      setNewBug({ title: '', description: '', priority: 'Medium' });
+      const bugData = {
+        title: newBug.title,
+        description: newBug.description,
+        priority: newBug.priority,
+        status: newBug.status,
+        assigned_to: newBug.assigned_to
+      };
+      
+      await api.post('/admin/bug', bugData);
+      setNewBug({ title: '', description: '', priority: 'Medium', status: 'open', assigned_to: '' });
       setShowCreateForm(false);
       fetchBugs();
+      setShowSuccessMessage('Bug created successfully!');
+      setTimeout(() => {
+        setShowSuccessMessage('');
+      }, 3000);
     } catch (err) {
-      setError('Failed to create bug');
+      console.error('Error creating bug:', err);
+      setError('Failed to create bug: ' + (err.response?.data?.message || err.message));
     }
   };
 
   const handleEditBug = async (e) => {
     e.preventDefault();
     try {
-      await api.put(`/bugedit/${editingBug.id}`, editingBug);
+      await api.put(`/admin/bug/${editingBug.id}`, editingBug);
       setEditingBug(null);
       fetchBugs();
     } catch (err) {
@@ -225,6 +259,7 @@ const BugList = () => {
                 value={newBug.priority}
                 onChange={(e) => setNewBug({ ...newBug, priority: e.target.value })}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                required
               >
                 <option value="Low">Low</option>
                 <option value="Medium">Medium</option>
@@ -232,12 +267,55 @@ const BugList = () => {
               </select>
             </div>
 
-            <button
-              type="submit"
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-            >
-              Create Bug
-            </button>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Status</label>
+              <select
+                value={newBug.status}
+                onChange={(e) => setNewBug({ ...newBug, status: e.target.value })}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                required
+              >
+                <option value="open">Open</option>
+                <option value="assigned">Assigned</option>
+                <option value="in_progress">In Progress</option>
+                <option value="fixed">Fixed</option>
+                <option value="reopened">Reopened</option>
+                <option value="closed">Closed</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Assign To</label>
+              <select
+                value={newBug.assigned_to}
+                onChange={(e) => setNewBug({ ...newBug, assigned_to: e.target.value })}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                required
+              >
+                <option value="">Select Developer</option>
+                {developers.map(dev => (
+                  <option key={dev.id} value={dev.id}>
+                    {dev.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex space-x-4">
+              <button
+                type="submit"
+                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+              >
+                Create Bug
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowCreateForm(false)}
+                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+              >
+                Cancel
+              </button>
+            </div>
           </form>
         </div>
       )}
@@ -425,12 +503,14 @@ const BugList = () => {
                         {new Date(comment.created_at).toLocaleString()}
                       </p>
                     </div>
-                    <button
-                      onClick={() => handleDeleteComment(comment.id)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      Delete
-                    </button>
+                    <div className="flex space-x-4">
+                      <button
+                        onClick={() => handleDeleteComment(comment.id)}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

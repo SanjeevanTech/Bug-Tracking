@@ -19,7 +19,7 @@ const CreateBug = () => {
     setError(null);
 
     try {
-      await api.post('/bugcreate', formData);
+      await api.post('/tester/bug', formData);
       navigate('/tester');
     } catch (err) {
       console.error('Error creating bug:', err);
