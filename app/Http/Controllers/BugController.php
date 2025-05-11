@@ -233,21 +233,18 @@ class BugController extends Controller
             $validatedData = $request->validate([
                 'title' => 'required|string',
                 'description' => 'required|string',
-                'priority' => 'required|in:Low,Medium,High',
-                'status' => 'required|in:open,assigned,in_progress,fixed,reopened,closed',
-                'assigned_to' => 'required|exists:users,id'
+                'priority' => 'required|in:Low,Medium,High'
             ]);
 
             $bug = Bug::create([
                 'title' => $validatedData['title'],
                 'description' => $validatedData['description'],
                 'priority' => $validatedData['priority'],
-                'status' => $validatedData['status'],
-                'assigned_to' => $validatedData['assigned_to'],
+                'status' => 'open',
                 'created_by' => Auth::id()
             ]);
 
-            $bug->load(['creator', 'assignee']);
+            $bug->load(['creator']);
 
             return response()->json([
                 'message' => 'Bug created successfully',
@@ -266,12 +263,13 @@ class BugController extends Controller
             $validatedData = $request->validate([
                 'title' => 'sometimes|required|string',
                 'description' => 'sometimes|required|string',
-                'priority' => 'sometimes|required|in:Low,Medium,High'
-               
+                'priority' => 'sometimes|required|in:Low,Medium,High',
+                'status' => 'sometimes|required|in:open,assigned,in_progress,fixed,reopened,closed',
+                'assigned_to' => 'nullable|exists:users,id'
             ]);
 
             $bug->update($validatedData);
-            
+            $bug->load(['creator', 'assignee']);
 
             return response()->json([
                 'message' => 'Bug updated successfully',

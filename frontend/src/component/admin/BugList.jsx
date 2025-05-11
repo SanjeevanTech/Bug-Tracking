@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import api from '../../api/axios';
-import Navbar from '../../components/Navbar';
 
 const BugList = () => {
   const [bugs, setBugs] = useState([]);
@@ -14,9 +13,7 @@ const BugList = () => {
   const [newBug, setNewBug] = useState({
     title: '',
     description: '',
-    priority: 'Medium',
-    status: 'open',
-    assigned_to: ''
+    priority: 'Medium'
   });
   const [developers, setDevelopers] = useState([]);
   const [showSuccessMessage, setShowSuccessMessage] = useState('');
@@ -148,13 +145,11 @@ const BugList = () => {
       const bugData = {
         title: newBug.title,
         description: newBug.description,
-        priority: newBug.priority,
-        status: newBug.status,
-        assigned_to: newBug.assigned_to
+        priority: newBug.priority
       };
       
       await api.post('/admin/bug', bugData);
-      setNewBug({ title: '', description: '', priority: 'Medium', status: 'open', assigned_to: '' });
+      setNewBug({ title: '', description: '', priority: 'Medium' });
       setShowCreateForm(false);
       fetchBugs();
       setShowSuccessMessage('Bug created successfully!');
@@ -180,8 +175,8 @@ const BugList = () => {
 
   const handleAssignDeveloper = async (bugId, developerId) => {
     try {
-      const response = await api.put(`/bugedit/${bugId}`, { 
-        assigned_to: developerId,
+      const response = await api.put(`/admin/bug/${bugId}`, { 
+        assigned_to: developerId || null,
         status: developerId ? 'assigned' : 'open'
       });
       
@@ -189,8 +184,8 @@ const BugList = () => {
       setBugs(bugs.map(bug => 
         bug.id === bugId ? { 
           ...bug, 
-          assigned_to: developerId,
-          assignee: developers.find(dev => dev.id === parseInt(developerId)),
+          assigned_to: developerId || null,
+          assignee: developerId ? developers.find(dev => dev.id === Number(developerId)) : null,
           status: developerId ? 'assigned' : 'open'
         } : bug
       ));
@@ -199,13 +194,19 @@ const BugList = () => {
       if (selectedBug && selectedBug.id === bugId) {
         setSelectedBug({ 
           ...selectedBug, 
-          assigned_to: developerId,
-          assignee: developers.find(dev => dev.id === parseInt(developerId)),
+          assigned_to: developerId || null,
+          assignee: developerId ? developers.find(dev => dev.id === Number(developerId)) : null,
           status: developerId ? 'assigned' : 'open'
         });
       }
+
+      setShowSuccessMessage(developerId ? 'Developer assigned successfully!' : 'Developer removed successfully!');
+      setTimeout(() => {
+        setShowSuccessMessage('');
+      }, 3000);
     } catch (err) {
-      setError('Failed to assign developer');
+      console.error('Error assigning developer:', err);
+      setError('Failed to assign developer: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -214,8 +215,6 @@ const BugList = () => {
 
   return (
     <div className="space-y-6">
-      <Navbar title="Admin Dashboard" />
-      
       {/* Create Bug Button */}
       <div className="flex justify-end">
         <button
@@ -266,10 +265,6 @@ const BugList = () => {
                 <option value="High">High</option>
               </select>
             </div>
-
-          
-            
-            
 
             <div className="flex space-x-4">
               <button
@@ -447,61 +442,73 @@ const BugList = () => {
 
       {/* Bug Details and Comments */}
       {selectedBug && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold mb-4">Bug Details</h3>
-          <div className="mb-4">
-            <p><strong>Title:</strong> {selectedBug.title}</p>
-            <p><strong>Description:</strong> {selectedBug.description}</p>
-            <p><strong>Priority:</strong> {selectedBug.priority}</p>
-            <p><strong>Status:</strong> {selectedBug.status}</p>
-            <p><strong>Assigned To:</strong> {selectedBug.assignee ? selectedBug.assignee.name : 'Not Assigned'}</p>
-            <p><strong>Created By:</strong> {selectedBug.creator ? `${selectedBug.creator.name} (${selectedBug.creator.role})` : 'Unknown'}</p>
-            <p><strong>Created At:</strong> {new Date(selectedBug.created_at).toLocaleString()}</p>
-          </div>
-
-          {/* Comments Section */}
-          <div className="mt-6">
-            <h4 className="text-lg font-semibold mb-4">Comments</h4>
-            <div className="space-y-4">
-              {comments.map((comment) => (
-                <div key={comment.id} className="bg-gray-50 p-4 rounded-lg">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-medium">{comment.user?.name}</p>
-                      <p className="text-gray-600">{comment.comment}</p>
-                      <p className="text-sm text-gray-500">
-                        {new Date(comment.created_at).toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="flex space-x-4">
-                      <button
-                        onClick={() => handleDeleteComment(comment.id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+        <div className="fixed inset-0 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-3/4 shadow-lg rounded-md bg-white">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Bug Details</h3>
+              <button
+                onClick={() => setSelectedBug(null)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="mb-4">
+              <p><strong>Title:</strong> {selectedBug.title}</p>
+              <p><strong>Description:</strong> {selectedBug.description}</p>
+              <p><strong>Priority:</strong> {selectedBug.priority}</p>
+              <p><strong>Status:</strong> {selectedBug.status}</p>
+              <p><strong>Assigned To:</strong> {selectedBug.assignee ? selectedBug.assignee.name : 'Not Assigned'}</p>
+              <p><strong>Created By:</strong> {selectedBug.creator ? `${selectedBug.creator.name} (${selectedBug.creator.role})` : 'Unknown'}</p>
+              <p><strong>Created At:</strong> {new Date(selectedBug.created_at).toLocaleString()}</p>
             </div>
 
-            {/* Add Comment Form */}
-            <div className="mt-4">
-              <textarea
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                className="w-full border rounded-lg p-2"
-                placeholder="Add a comment..."
-                rows="3"
-              />
-              <button
-                onClick={() => handleAddComment(selectedBug.id)}
-                className="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-400"
-                disabled={!newComment.trim()}
-              >
-                Add Comment
-              </button>
+            {/* Comments Section */}
+            <div className="mt-6">
+              <h4 className="text-lg font-semibold mb-4">Comments</h4>
+              <div className="space-y-4 max-h-96 overflow-y-auto">
+                {comments.map((comment) => (
+                  <div key={comment.id} className="bg-gray-50 p-4 rounded-lg">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-medium">{comment.user?.name}</p>
+                        <p className="text-gray-600">{comment.comment}</p>
+                        <p className="text-sm text-gray-500">
+                          {new Date(comment.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="flex space-x-4">
+                        <button
+                          onClick={() => handleDeleteComment(comment.id)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Add Comment Form */}
+              <div className="mt-4">
+                <textarea
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  className="w-full border rounded-lg p-2"
+                  placeholder="Add a comment..."
+                  rows="3"
+                />
+                <button
+                  onClick={() => handleAddComment(selectedBug.id)}
+                  className="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-400"
+                  disabled={!newComment.trim()}
+                >
+                  Add Comment
+                </button>
+              </div>
             </div>
           </div>
         </div>

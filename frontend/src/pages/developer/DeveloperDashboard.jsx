@@ -68,7 +68,7 @@ const DeveloperDashboard = () => {
 
   const handleStatusChange = async (bugId, newStatus) => {
     try {
-      await api.put(`/bugedit/${bugId}`, { status: newStatus });
+      await api.put(`/developer/bug/${bugId}/status`, { status: newStatus });
       await fetchBugs(); // Refresh the bug list
       setShowSuccessMessage(`Status updated to ${newStatus} successfully!`);
       setTimeout(() => {

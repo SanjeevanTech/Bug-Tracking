@@ -157,15 +157,26 @@ public function getDetails(Request $request)
    }
 
    public function deleteUser($id){
-        $user = User::find($id);
+        try {
+            $user = User::find($id);
 
-        if (!$user) {
-            return response()->json(['message' => 'User not found.'], 404);
+            if (!$user) {
+                return response()->json(['message' => 'User not found.'], 404);
+            }
+
+            // Unassign all bugs assigned to this user
+            \App\Models\Bug::where('assigned_to', $id)->update(['assigned_to' => null, 'status' => 'open']);
+
+            // Delete the user
+            $user->delete();
+
+            return response()->json(['message' => 'User deleted successfully.'], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error deleting user',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $user->delete();
-
-        return response()->json(['message' => 'User deleted successfully.'], 200);
     }
 
     public function getAllUsers()

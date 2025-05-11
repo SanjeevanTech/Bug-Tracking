@@ -10,7 +10,6 @@ const Dashboard = () => {
     openBugs: 0,
     inProgressBugs: 0,
     resolvedBugs: 0,
-    closeBugs: 0,
     assignedBugs: 0,
     reopenedBugs: 0
   });
@@ -36,8 +35,7 @@ const Dashboard = () => {
           totalBugs: bugs.length,
           openBugs: bugs.filter(bug => bug.status === 'open').length,
           inProgressBugs: bugs.filter(bug => bug.status === 'in_progress').length,
-          resolvedBugs: bugs.filter(bug => bug.status === 'fixed').length,
-          closeBugs: bugs.filter(bug => bug.status === 'closed').length,
+          resolvedBugs: bugs.filter(bug => bug.status === 'fixed' || bug.status === 'closed').length,
           assignedBugs: bugs.filter(bug => bug.status === 'assigned').length,
           reopenedBugs: bugs.filter(bug => bug.status === 'reopened').length
         });
@@ -87,10 +85,6 @@ const Dashboard = () => {
             <div className="bg-green-100 p-4 rounded-lg">
               <h3 className="font-semibold">Re opened</h3>
               <p className="text-2xl">{stats.reopenedBugs}</p>
-            </div>
-            <div className="bg-green-100 p-4 rounded-lg">
-              <h3 className="font-semibold">closed</h3>
-              <p className="text-2xl">{stats.closeBugs}</p>
             </div>
           </div>
         )}

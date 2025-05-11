@@ -39,10 +39,19 @@ const TesterBugList = () => {
     }
   };
 
+  const getStatusDisplay = (bug) => {
+    if (!bug.assigned_to) {
+      return 'open';
+    }
+    return bug.status;
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'open':
         return 'bg-blue-100 text-blue-800';
+      case 'assigned':
+        return 'bg-purple-100 text-purple-800';
       case 'in_progress':
         return 'bg-yellow-100 text-yellow-800';
       case 'fixed':
@@ -54,13 +63,6 @@ const TesterBugList = () => {
       default:
         return 'bg-gray-100 text-gray-800';
     }
-  };
-
-  const getStatusDisplay = (bug) => {
-    if (!bug.assigned_to) {
-      return 'Open';
-    }
-    return bug.status;
   };
 
   const handleEditClick = (bug) => {
@@ -97,6 +99,9 @@ const TesterBugList = () => {
       await api.put(`/tester/bug/${bugId}`, { status: newStatus });
       await fetchBugs(); // Refresh the bug list
       setShowSuccessMessage('Status updated successfully!');
+      setTimeout(() => {
+        setShowSuccessMessage('');
+      }, 3000);
     } catch (err) {
       console.error('Error updating status:', err);
       setError(err.response?.data?.message || 'Failed to update status');
@@ -141,6 +146,22 @@ const TesterBugList = () => {
     }
   };
 
+  const handleDeleteBug = async (bugId) => {
+    if (window.confirm('Are you sure you want to delete this bug?')) {
+      try {
+        await api.delete(`/tester/bug/${bugId}/delete`);
+        await fetchBugs();
+        setShowSuccessMessage('Bug deleted successfully!');
+        setTimeout(() => {
+          setShowSuccessMessage('');
+        }, 3000);
+      } catch (err) {
+        console.error('Error deleting bug:', err);
+        setError('Failed to delete bug: ' + (err.response?.data?.message || err.message));
+      }
+    }
+  };
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div className="text-red-500">{error}</div>;
 
@@ -181,43 +202,44 @@ const TesterBugList = () => {
               </div>
             ) : (
               bugs.map((bug) => (
-                <div key={bug.id} className="bg-white rounded-lg shadow p-6">
-                  <div className="mb-4">
-                    <div className="flex justify-between items-start">
-                      <h3 className="text-xl font-semibold text-gray-800">{bug.title}</h3>
-                      <div className="flex gap-2">
-                        {!bug.assigned_to && (
-                          <button
-                            onClick={() => handleEditClick(bug)}
-                            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                          >
-                            Edit Bug
-                          </button>
-                        )}
+                <div key={bug.id} className="bg-white rounded-lg shadow p-6 mb-4">
+                  <div className="flex justify-between items-start">
+                    <h3 className="text-xl font-semibold text-gray-800">{bug.title}</h3>
+                    <div className="flex gap-2">
+                      {!bug.assigned_to && (
                         <button
-                          onClick={() => handleViewComments(bug)}
-                          className="text-green-600 hover:text-green-800 text-sm font-medium"
+                          onClick={() => handleEditClick(bug)}
+                          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
                         >
-                          {expandedBugId === bug.id ? 'Hide Comments' : 'View Comments'}
+                          Edit Bug
                         </button>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium
-                        ${bug.priority === 'High' ? 'bg-red-100 text-red-800' : 
-                          bug.priority === 'Medium' ? 'bg-yellow-100 text-yellow-800' : 
-                          'bg-green-100 text-green-800'}`}>
-                        {bug.priority}
-                      </span>
-                      <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(getStatusDisplay(bug))}`}>
-                        {getStatusDisplay(bug)}
-                      </span>
-                      {bug.assigned_to && (
-                        <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
-                          Assigned
-                        </span>
                       )}
+                      {getStatusDisplay(bug) === 'open' && (
+                        <button
+                          onClick={() => handleDeleteBug(bug.id)}
+                          className="text-red-600 hover:text-red-800 text-sm font-medium"
+                        >
+                          Delete Bug
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleViewComments(bug)}
+                        className="text-green-600 hover:text-green-800 text-sm font-medium"
+                      >
+                        {expandedBugId === bug.id ? 'Hide Comments' : 'View Comments'}
+                      </button>
                     </div>
+                  </div>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium
+                      ${bug.priority === 'High' ? 'bg-red-100 text-red-800' : 
+                        bug.priority === 'Medium' ? 'bg-yellow-100 text-yellow-800' : 
+                        'bg-green-100 text-green-800'}`}>
+                      {bug.priority}
+                    </span>
+                    <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(getStatusDisplay(bug))}`}>
+                      {getStatusDisplay(bug)}
+                    </span>
                   </div>
                   <p className="text-gray-600">{bug.description}</p>
                   {bug.assigned_to && (
@@ -225,23 +247,23 @@ const TesterBugList = () => {
                       <div className="text-sm text-gray-500">
                         Assigned to: {bug.assignee ? bug.assignee.name : 'Not Assigned'}
                       </div>
-                      {(bug.status === 'fixed' || bug.status === 'closed' || bug.status === 'reopened') && (
+                      {(getStatusDisplay(bug) === 'fixed' || getStatusDisplay(bug) === 'closed' || getStatusDisplay(bug) === 'reopened') && (
                         <select
-                          value={bug.status}
+                          value={getStatusDisplay(bug)}
                           onChange={(e) => handleStatusChange(bug.id, e.target.value)}
                           className="border rounded px-2 py-1 text-sm"
                         >
-                          <option value={bug.status}>{bug.status}</option>
-                          {bug.status === 'fixed' && (
+                          <option value={getStatusDisplay(bug)}>{getStatusDisplay(bug)}</option>
+                          {getStatusDisplay(bug) === 'fixed' && (
                             <>
                               <option value="reopened">Reopen Bug</option>
                               <option value="closed">Close Bug</option>
                             </>
                           )}
-                          {bug.status === 'closed' && (
+                          {getStatusDisplay(bug) === 'closed' && (
                             <option value="reopened">Reopen Bug</option>
                           )}
-                          {bug.status === 'reopened' && (
+                          {getStatusDisplay(bug) === 'reopened' && (
                             <option value="closed">Close Bug</option>
                           )}
                         </select>
