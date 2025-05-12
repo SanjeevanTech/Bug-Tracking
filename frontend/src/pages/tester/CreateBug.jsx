@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
+import { FaSpinner } from 'react-icons/fa';
 
 const CreateBug = () => {
   const navigate = useNavigate();
@@ -28,6 +29,14 @@ const CreateBug = () => {
       setLoading(false);
     }
   };
+
+  if (loading) return (
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="text-center">
+        <FaSpinner className="animate-spin text-4xl text-blue-500 mx-auto" />
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gray-100">

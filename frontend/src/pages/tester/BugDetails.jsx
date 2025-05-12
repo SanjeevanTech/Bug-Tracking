@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../../api/axios';
+import { FaSpinner } from 'react-icons/fa';
 
 const BugDetails = () => {
   const { id } = useParams();
@@ -59,7 +60,13 @@ const BugDetails = () => {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return (
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="text-center">
+        <FaSpinner className="animate-spin text-4xl text-blue-500 mx-auto" />
+      </div>
+    </div>
+  );
   if (error) return <div className="text-red-500">{error}</div>;
   if (!bug) return <div>Bug not found</div>;
 
@@ -97,15 +104,15 @@ const BugDetails = () => {
           <div className="space-y-4">
             {comments && comments.length > 0 ? (
               comments.map((comment) => (
-                <div key={comment.id} className="border-b pb-4">
-                  <div className="flex justify-between items-center mb-2">
+              <div key={comment.id} className="border-b pb-4">
+                <div className="flex justify-between items-center mb-2">
                     <span className="font-semibold">{comment.user ? comment.user.name : 'Unknown'}</span>
-                    <span className="text-sm text-gray-500">
-                      {new Date(comment.created_at).toLocaleString()}
-                    </span>
-                  </div>
-                  <p className="text-gray-700">{comment.comment}</p>
+                  <span className="text-sm text-gray-500">
+                    {new Date(comment.created_at).toLocaleString()}
+                  </span>
                 </div>
+                  <p className="text-gray-700">{comment.comment}</p>
+              </div>
               ))
             ) : (
               <div className="text-gray-500 text-center py-4">No comments yet</div>

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import Navbar from '../../components/Navbar';
+import { FaBug, FaEdit, FaTrash, FaComments, FaSpinner, FaUser, FaPlus, FaCheck, FaTimes } from 'react-icons/fa';
 
 const TesterBugList = () => {
   const [bugs, setBugs] = useState([]);
@@ -162,21 +163,37 @@ const TesterBugList = () => {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div className="text-red-500">{error}</div>;
+  if (loading) return (
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="text-center">
+        <FaSpinner className="animate-spin text-4xl text-blue-500 mx-auto" />
+      </div>
+    </div>
+  );
+
+  if (error) return (
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative max-w-md">
+        <FaTimes className="text-xl mb-2" />
+        <p>{error}</p>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Success Message Popup */}
       {showSuccessMessage && (
-        <div className="fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded z-50">
+        <div className="fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded z-50 flex items-center gap-2 shadow-lg">
+          <FaCheck className="text-green-500" />
           {showSuccessMessage}
         </div>
       )}
 
       {/* Error Message Popup */}
       {error && (
-        <div className="fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded z-50">
+        <div className="fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded z-50 flex items-center gap-2 shadow-lg">
+          <FaTimes className="text-red-500" />
           {error}
         </div>
       )}
@@ -186,72 +203,88 @@ const TesterBugList = () => {
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">My Reported Bugs</h2>
+            <div className="flex items-center gap-3">
+              <FaBug className="text-3xl text-blue-500" />
+              <h2 className="text-2xl font-bold text-gray-900">My Reported Bugs</h2>
+            </div>
             <Link 
               to="/tester/create-bug" 
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
+              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2 shadow-md hover:shadow-lg"
             >
+              <FaPlus />
               Report New Bug
             </Link>
           </div>
           
           <div className="grid gap-6">
             {bugs.length === 0 ? (
-              <div className="text-center text-gray-500 py-8">
-                You haven't reported any bugs yet. Click "Report New Bug" to create one.
+              <div className="text-center text-gray-500 py-12 bg-white rounded-lg shadow-md">
+                <FaBug className="text-4xl text-gray-400 mx-auto mb-4" />
+                <p className="text-lg">You haven't reported any bugs yet.</p>
+                <p className="text-sm mt-2">Click "Report New Bug" to create one.</p>
               </div>
             ) : (
               bugs.map((bug) => (
-                <div key={bug.id} className="bg-white rounded-lg shadow p-6 mb-4">
+                <div key={bug.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6 mb-4">
                   <div className="flex justify-between items-start">
-                    <h3 className="text-xl font-semibold text-gray-800">{bug.title}</h3>
+                    <div className="flex items-start gap-3">
+                      <FaBug className="text-2xl text-blue-500 mt-1" />
+                      <div>
+                        <h3 className="text-xl font-semibold text-gray-800">{bug.title}</h3>
+                        <p className="text-gray-600 mt-1">{bug.description}</p>
+                      </div>
+                    </div>
                     <div className="flex gap-2">
                       {!bug.assigned_to && (
                         <button
                           onClick={() => handleEditClick(bug)}
-                          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                          className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1 hover:bg-blue-50 px-3 py-1 rounded"
+                          disabled={isUpdating}
                         >
+                          {isUpdating ? <FaSpinner className="animate-spin" /> : <FaEdit />}
                           Edit Bug
                         </button>
                       )}
                       {getStatusDisplay(bug) === 'open' && (
                         <button
                           onClick={() => handleDeleteBug(bug.id)}
-                          className="text-red-600 hover:text-red-800 text-sm font-medium"
+                          className="text-red-600 hover:text-red-800 text-sm font-medium flex items-center gap-1 hover:bg-red-50 px-3 py-1 rounded"
                         >
+                          <FaTrash />
                           Delete Bug
                         </button>
                       )}
                       <button
                         onClick={() => handleViewComments(bug)}
-                        className="text-green-600 hover:text-green-800 text-sm font-medium"
+                        className="text-green-600 hover:text-green-800 text-sm font-medium flex items-center gap-1 hover:bg-green-50 px-3 py-1 rounded"
                       >
+                        <FaComments />
                         {expandedBugId === bug.id ? 'Hide Comments' : 'View Comments'}
                       </button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium
+                  <div className="flex items-center gap-2 mt-4">
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
                       ${bug.priority === 'High' ? 'bg-red-100 text-red-800' : 
                         bug.priority === 'Medium' ? 'bg-yellow-100 text-yellow-800' : 
                         'bg-green-100 text-green-800'}`}>
                       {bug.priority}
                     </span>
-                    <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(getStatusDisplay(bug))}`}>
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(getStatusDisplay(bug))}`}>
                       {getStatusDisplay(bug)}
                     </span>
                   </div>
-                  <p className="text-gray-600">{bug.description}</p>
                   {bug.assigned_to && (
                     <div className="mt-4 flex justify-between items-center">
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-gray-500 flex items-center gap-2">
+                        <FaUser className="text-gray-400" />
                         Assigned to: {bug.assignee ? bug.assignee.name : 'Not Assigned'}
                       </div>
                       {(getStatusDisplay(bug) === 'fixed' || getStatusDisplay(bug) === 'closed' || getStatusDisplay(bug) === 'reopened') && (
                         <select
                           value={getStatusDisplay(bug)}
                           onChange={(e) => handleStatusChange(bug.id, e.target.value)}
-                          className="border rounded px-2 py-1 text-sm"
+                          className="border rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         >
                           <option value={getStatusDisplay(bug)}>{getStatusDisplay(bug)}</option>
                           {getStatusDisplay(bug) === 'fixed' && (
@@ -274,15 +307,21 @@ const TesterBugList = () => {
                   {/* Comments Section */}
                   {expandedBugId === bug.id && (
                     <div className="mt-6 border-t pt-4">
-                      <h4 className="text-lg font-semibold mb-4">Comments</h4>
+                      <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <FaComments className="text-blue-500" />
+                        Comments
+                      </h4>
                       {comments[bug.id]?.length === 0 ? (
-                        <p className="text-gray-500 text-center py-4">No comments yet</p>
+                        <p className="text-gray-500 text-center py-4 bg-gray-50 rounded-lg">No comments yet</p>
                       ) : (
                         <div className="space-y-4">
                           {comments[bug.id]?.map((comment) => (
-                            <div key={comment.id} className="bg-gray-50 p-3 rounded">
+                            <div key={comment.id} className="bg-gray-50 p-4 rounded-lg shadow-sm">
                               <div className="flex justify-between items-start mb-2">
-                                <span className="font-medium text-sm">{comment.user?.name}</span>
+                                <div className="flex items-center gap-2">
+                                  <FaUser className="text-gray-400" />
+                                  <span className="font-medium text-sm">{comment.user?.name}</span>
+                                </div>
                                 <span className="text-xs text-gray-500">
                                   {new Date(comment.created_at).toLocaleString()}
                                 </span>
@@ -304,9 +343,12 @@ const TesterBugList = () => {
       {/* Edit Bug Modal */}
       {isEditModalOpen && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+          <div className="relative top-20 mx-auto p-6 border w-96 shadow-xl rounded-lg bg-white">
             <div className="mt-3">
-              <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">Edit Bug</h3>
+              <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4 flex items-center gap-2">
+                <FaEdit className="text-blue-500" />
+                Edit Bug
+              </h3>
               <form onSubmit={handleEditSubmit}>
                 <div className="mb-4">
                   <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="title">
@@ -318,7 +360,7 @@ const TesterBugList = () => {
                     name="title"
                     value={editForm.title}
                     onChange={handleInputChange}
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    className="shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
                     required
                     disabled={isUpdating}
                   />
@@ -332,7 +374,7 @@ const TesterBugList = () => {
                     name="description"
                     value={editForm.description}
                     onChange={handleInputChange}
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    className="shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
                     rows="4"
                     required
                     disabled={isUpdating}
@@ -347,7 +389,7 @@ const TesterBugList = () => {
                     name="priority"
                     value={editForm.priority}
                     onChange={handleInputChange}
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    className="shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
                     required
                     disabled={isUpdating}
                   >
@@ -361,17 +403,28 @@ const TesterBugList = () => {
                   <button
                     type="button"
                     onClick={() => setIsEditModalOpen(false)}
-                    className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+                    className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors flex items-center gap-2"
                     disabled={isUpdating}
                   >
+                    <FaTimes />
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={isUpdating}
                   >
-                    {isUpdating ? 'Updating...' : 'Save Changes'}
+                    {isUpdating ? (
+                      <>
+                        <FaSpinner className="animate-spin" />
+                        Updating...
+                      </>
+                    ) : (
+                      <>
+                        <FaCheck />
+                        Save Changes
+                      </>
+                    )}
                   </button>
                 </div>
               </form>

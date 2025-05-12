@@ -1,6 +1,7 @@
 import { Navigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
+import { FaSpinner } from 'react-icons/fa';
 
 const RouteGuard = ({ children, allowedRoles }) => {
   const [user, setUser] = useState(null);
@@ -22,7 +23,13 @@ const RouteGuard = ({ children, allowedRoles }) => {
   }, []);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <FaSpinner className="animate-spin text-4xl text-blue-500 mx-auto" />
+        </div>
+      </div>
+    );
   }
 
   if (!user || !allowedRoles.includes(user.role)) {

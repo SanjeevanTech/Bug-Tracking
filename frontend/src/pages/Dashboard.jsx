@@ -2,6 +2,15 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
+import { 
+  FaBug, 
+  FaExclamationTriangle, 
+  FaCheckCircle, 
+  FaUserCog,
+  FaSpinner,
+  FaChartLine,
+  FaClock
+} from 'react-icons/fa';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -13,10 +22,12 @@ const Dashboard = () => {
     assignedBugs: 0,
     reopenedBugs: 0
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
+        setLoading(true);
         let response;
         if (user.role === 'admin') {
           response = await api.get('/admin/bugs');
@@ -27,9 +38,6 @@ const Dashboard = () => {
         }
 
         const bugs = response.data.bugs;
-        console.log('API Response:', response.data);
-        console.log('Total Bugs:', bugs.length);
-        console.log('Bugs:', bugs);
         
         setStats({
           totalBugs: bugs.length,
@@ -41,6 +49,8 @@ const Dashboard = () => {
         });
       } catch (error) {
         console.error('Error fetching stats:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -49,59 +59,77 @@ const Dashboard = () => {
     }
   }, [user]);
 
-  if (!user) {
-    return <div>Loading...</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <FaSpinner className="animate-spin text-4xl text-blue-500 mx-auto" />
+        </div>
+      </div>
+    );
   }
 
+  const StatCard = ({ title, value, icon: Icon, color }) => (
+    <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-gray-500 text-sm font-medium">{title}</p>
+          <p className="text-2xl font-bold mt-1">{value}</p>
+        </div>
+        <div className={`p-3 rounded-full ${color}`}>
+          <Icon className="w-6 h-6 text-white" />
+        </div>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="p-6">
-      <div className="bg-white rounded-lg shadow p-6">
-        <h1 className="text-2xl font-bold mb-6">
-          Welcome, {user.name} ({user.role})
-        </h1>
-        
-        {user.role === 'admin' && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-blue-100 p-4 rounded-lg">
-              <h3 className="font-semibold">Total Bugs</h3>
-              <p className="text-2xl">{stats.totalBugs}</p>
-            </div>
-            <div className="bg-yellow-100 p-4 rounded-lg">
-              <h3 className="font-semibold">Open Bugs</h3>
-              <p className="text-2xl">{stats.openBugs}</p>
-            </div>
-            <div className="bg-purple-100 p-4 rounded-lg">
-              <h3 className="font-semibold">In Progress</h3>
-              <p className="text-2xl">{stats.inProgressBugs}</p>
-            </div>
-            <div className="bg-green-100 p-4 rounded-lg">
-              <h3 className="font-semibold">Resolved</h3>
-              <p className="text-2xl">{stats.resolvedBugs}</p>
-            </div>
-            <div className="bg-green-100 p-4 rounded-lg">
-              <h3 className="font-semibold">Assigned to</h3>
-              <p className="text-2xl">{stats.assignedBugs}</p>
-            </div>
-            <div className="bg-green-100 p-4 rounded-lg">
-              <h3 className="font-semibold">Re opened</h3>
-              <p className="text-2xl">{stats.reopenedBugs}</p>
-            </div>
-          </div>
-        )}
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-800">Dashboard Overview</h1>
+        <div className="flex items-center space-x-2 text-sm text-gray-500">
+          <FaClock className="w-4 h-4" />
+          <span>Last updated: {new Date().toLocaleTimeString()}</span>
+        </div>
+      </div>
 
-        {user.role === 'developer' && (
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Assigned Bugs</h2>
-            {/* Add your bug list component here */}
-          </div>
-        )}
-
-        {user.role === 'tester' && (
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Reported Bugs</h2>
-            {/* Add your bug list component here */}
-          </div>
-        )}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <StatCard
+          title="Total Bugs"
+          value={stats.totalBugs}
+          icon={FaBug}
+          color="bg-blue-500"
+        />
+        <StatCard
+          title="Open Bugs"
+          value={stats.openBugs}
+          icon={FaExclamationTriangle}
+          color="bg-red-500"
+        />
+        <StatCard
+          title="In Progress"
+          value={stats.inProgressBugs}
+          icon={FaSpinner}
+          color="bg-yellow-500"
+        />
+        <StatCard
+          title="Resolved"
+          value={stats.resolvedBugs}
+          icon={FaCheckCircle}
+          color="bg-green-500"
+        />
+        <StatCard
+          title="Assigned"
+          value={stats.assignedBugs}
+          icon={FaUserCog}
+          color="bg-purple-500"
+        />
+        <StatCard
+          title="Reopened"
+          value={stats.reopenedBugs}
+          icon={FaChartLine}
+          color="bg-orange-500"
+        />
       </div>
     </div>
   );

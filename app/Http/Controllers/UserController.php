@@ -139,20 +139,48 @@ public function getDetails(Request $request)
             return response()->json(['message' => 'User not found.'], 404);
         }
 
-        
+        // Validate the request data
         $validatedData = $request->validate([
             'name'  => 'sometimes|required|string|max:255',
             'email' => 'sometimes|required|email|unique:users,email,' . $id,
+            'current_password' => 'required_with:new_password|string',
+            'new_password' => 'required_with:current_password|string|min:6',
+            'new_password_confirmation' => 'required_if:new_password,!=,null|same:new_password'
         ], [
             'email.unique'    => 'This email is already used by another user. Please use a different one.',
+            'current_password.required_with' => 'Current password is required when updating password.',
+            'new_password.required_with' => 'New password is required when updating password.',
+            'new_password.min' => 'New password must be at least 6 characters long.',
+            'new_password_confirmation.required_if' => 'Please confirm your new password.',
+            'new_password_confirmation.same' => 'New password confirmation does not match.'
         ]);
 
+        // If password update is requested
+        if ($request->has('current_password') && $request->has('new_password')) {
+            // Verify current password
+            if (!Hash::check($request->current_password, $user->password)) {
+                return response()->json([
+                    'message' => 'Current password is incorrect.'
+                ], 422);
+            }
 
-        $user->update($validatedData);
+            // Update password
+            $user->password = Hash::make($request->new_password);
+        }
+
+        // Update other fields if provided
+        if ($request->has('name')) {
+            $user->name = $validatedData['name'];
+        }
+        if ($request->has('email')) {
+            $user->email = $validatedData['email'];
+        }
+
+        $user->save();
 
         return response()->json([
             'message' => 'User updated successfully.',
-            'user' => $user
+            'user' => $user->only(['id', 'name', 'email', 'role'])
         ], 200);
    }
 
