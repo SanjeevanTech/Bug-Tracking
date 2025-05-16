@@ -83,7 +83,5 @@ This dual setup ensures that:
 2. Commit your changes with clear messages.
 3. Open a pull request describing your changes.
 
-## License
-MIT
 
 
