@@ -1,3 +1,13 @@
+# React Frontend Ignores
+# ====================
+
+# Dependencies
+node_modules
+
+# Build Outputs
+dist
+dist-ssr
+
 # Logs
 logs
 *.log
@@ -7,15 +17,13 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
+# Environment
 *.local
 
-# Editor directories and files
-.vscode/*
+# Editor & IDE
+.vscode/
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
 *.suo
 *.ntvs*
